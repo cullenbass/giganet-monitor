@@ -17,6 +17,7 @@ import (
 type Data struct {
 	pingTime int
 	validData bool
+	testTime string
 }
 
 func write(ch chan Data) {
@@ -38,7 +39,7 @@ func write(ch chan Data) {
 		}
 	}
 	for data := range ch {
-		err:= w.Write([]string{time.Now().Format(time.RFC3339), strconv.Itoa(data.pingTime), strconv.FormatBool(data.validData)})
+		err:= w.Write([]string{data.testTime, strconv.Itoa(data.pingTime), strconv.FormatBool(data.validData)})
 		if err!= nil {
 			fmt.Println(err)
 			continue
@@ -48,6 +49,7 @@ func write(ch chan Data) {
 }
 
 func verify(url string, ch chan Data) {
+	testTime := time.Now().Format(time.RFC3339)
 	req, _ := http.NewRequest("GET", url, nil)
 	var netTransport = &http.Transport{
 		Dial: (&net.Dialer{
@@ -61,22 +63,22 @@ func verify(url string, ch chan Data) {
 	client := &http.Client{Timeout:60 * time.Second, Transport: netTransport}
 	res, err := client.Do(req)
 	if err != nil {
-		ch <- Data{-1, false}
+		ch <- Data{-1, false, testTime}
 		return
 	}
 	_, err = io.Copy(ioutil.Discard, res.Body)
 	res.Body.Close()
 	if err != nil{
-		ch <- Data{-1, false}
+		ch <- Data{-1, false, testTime}
 	} else {
 		var valid bool
-		if res.StatusCode >= 300 {
+		if res.StatusCode >= 400 {
 			valid = false
 		} else {
 			valid = true
 		}
 		ping := int(result.Connect / time.Millisecond)
-		ch <- Data{ping, valid}
+		ch <- Data{ping, valid, testTime}
 	}
 	netTransport.CloseIdleConnections()
 }
@@ -87,13 +89,13 @@ func main() {
 	interval := 1
 	flag.Parse()
 	if flag.NArg() > 2 || flag.NArg() == 1 {
-		fmt.Println("Invalid arguments. Example: gigabet <full http url to test> <number of minutes between tests>")
+		fmt.Println("Invalid arguments. Example: giganet-monitor <full http url to test> <number of minutes between tests>")
 		os.Exit(1)
 	} else if flag.NArg()) == 2 {
 		url = flag.Arg(0)
 		i,err := strconv.Atoi(flag.Arg(1))
 		if err != nil {
-			fmt.Println("Invalid arguments. Example: gigabet <full http url to test> <number of minutes between tests>")
+			fmt.Println("Invalid arguments. Example: giganet-monitor <full http url to test> <number of minutes between tests>")
 			os.Exit(1)
 		} else {
 			interval = i
