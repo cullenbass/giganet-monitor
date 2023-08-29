@@ -91,7 +91,7 @@ func main() {
 	if flag.NArg() > 2 || flag.NArg() == 1 {
 		fmt.Println("Invalid arguments. Example: giganet-monitor <full http url to test> <number of minutes between tests>")
 		os.Exit(1)
-	} else if flag.NArg()) == 2 {
+	} else if flag.NArg() == 2 {
 		url = flag.Arg(0)
 		i,err := strconv.Atoi(flag.Arg(1))
 		if err != nil {
